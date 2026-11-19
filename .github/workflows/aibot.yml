@@ -1,0 +1,55 @@
+# AIBot: built and checked on every change to aibot/. A tag aibot-vX.Y.Z (matching the pom's
+# version) also publishes AIBot-X.Y.Z.jar as a GitHub Release.
+name: aibot
+
+on:
+  push:
+    branches: [main]
+    paths: [aibot/**, .github/workflows/aibot.yml]
+    tags: [aibot-v*]
+  pull_request:
+    paths: [aibot/**, .github/workflows/aibot.yml]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: aibot
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+      - run: mvn -B package
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: aibot
+          path: aibot/target/AIBot-*.jar
+
+  release:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/aibot-v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: aibot
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version=${GITHUB_REF_NAME#aibot-v}
+          if [ ! -f "AIBot-$version.jar" ]; then
+            echo "::error::$GITHUB_REF_NAME doesn't match aibot/pom.xml's version (built: $(ls AIBot-*.jar))"
+            exit 1
+          fi
+          gh release create "$GITHUB_REF_NAME" "AIBot-$version.jar" --title "AIBot $version" --notes "AIBot $version for Paper."
