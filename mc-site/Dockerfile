@@ -1,4 +1,6 @@
 FROM python:3.12.16-slim
+LABEL org.opencontainers.image.source=https://github.com/vmenon04/minecraft \
+      org.opencontainers.image.description="mc.vasumenon.com: server status and the BlueMap web map"
 
 WORKDIR /app
 COPY requirements.txt .
