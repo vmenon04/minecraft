@@ -3,9 +3,9 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
                              http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
-  <groupId>me.yourname</groupId>
+  <groupId>com.vasumenon</groupId>
   <artifactId>AIBot</artifactId>
-  <version>1.0</version>
+  <version>1.1.0</version>
   <name>AIBot</name>
 
   <repositories>
@@ -57,7 +57,7 @@
                 <!-- Relocate org.json to avoid conflicts -->
                 <relocation>
                   <pattern>org.json</pattern>
-                  <shadedPattern>me.yourname.aibot.libs.org.json</shadedPattern>
+                  <shadedPattern>com.vasumenon.aibot.libs.org.json</shadedPattern>
                 </relocation>
               </relocations>
               <createDependencyReducedPom>false</createDependencyReducedPom>

@@ -1,4 +1,4 @@
-package me.yourname.aibot;
+package com.vasumenon.aibot;
 
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
