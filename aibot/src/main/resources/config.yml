@@ -1,0 +1,5 @@
+# AIBot configuration
+# The full URL of the AI backend endpoint
+ai_endpoint: "https://why.com/api/ultimate-search"
+# Prepended to every /ai question so answers stay about Minecraft
+question_context: "This question comes from a player on a Minecraft Java Edition server, so answer it in the context of Minecraft: "
