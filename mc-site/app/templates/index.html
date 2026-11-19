@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FLATBOY's Home Page</title>
+<meta name="description" content="flatboy, a ThinkPad T470 hosting Minecraft servers, with live server status.">
+<style>
+  /* the only CSS on the page: keep it usable on phones */
+  body { max-width: 760px; margin: 0 auto; padding: 8px 16px 24px; }
+  pre.dos { overflow-x: auto; }
+  table { max-width: 100%; }
+</style>
+</head>
+<body bgcolor="#c0c0c0" text="#000000" link="#0000ee" vlink="#551a8b" alink="#ff0000">
+
+<center>
+  <h1><font face="Times New Roman">FLATBOY's Home Page</font></h1>
+  <font size="2"><i>A ThinkPad T470 on the Information Superhighway</i></font>
+</center>
+
+<hr>
+
+<marquee behavior="alternate" scrollamount="4"><b>*** Now serving Minecraft 24/7!!! ***</b></marquee>
+
+<hr>
+
+<p>Welcome to my home page! This laptop retired from laptop life to host
+Minecraft servers for my friends. Pull up a chair and stay a while.</p>
+
+<p><b>Server address:</b> <tt id="addr">{{ join }}</tt>
+  <button type="button" id="copy">Copy</button></p>
+
+<h3>Server Status</h3>
+
+<pre class="dos" style="background:#000000; color:#c0c0c0; padding:10px; border:2px inset #808080; font-family:'Courier New',Courier,monospace; font-size:14px; line-height:1.3; margin:0;"
+><span id="term">C:\FLATBOY&gt; mcstatus
+
+SERVER          STATUS  PLAYERS  VERSION
+{% for srv in s.servers -%}
+{{ "%-16s"|format(srv.name) }}{{ "%-8s"|format("UP" if srv.online else "DOWN") }}{{ "%-9s"|format(srv.players ~ "/" ~ srv.max_players if srv.online else "-") }}{{ srv.version if srv.online else "-" }}
+{% endfor %}
+C:\FLATBOY&gt; </span><span id="cur">_</span></pre>
+
+<p><font size="2">Updated every 30 seconds. Last checked: <span id="checked">just now</span>.
+  </font></p>
+
+<hr>
+
+<h3>About This Computer</h3>
+
+<table border="1" cellpadding="4" cellspacing="0" bgcolor="#ffffff">
+  <tr><td><b>Computer</b></td><td>Lenovo ThinkPad T470</td></tr>
+  <tr><td><b>Processor</b></td><td>Intel Core i5-6300U, 2.4 GHz</td></tr>
+  <tr><td><b>Operating System</b></td><td>Ubuntu 24.04 LTS</td></tr>
+  <tr><td><b>Hard Disk</b></td><td>256 GB</td></tr>
+  <tr><td><b>Memory</b></td><td id="m-mem">-</td></tr>
+  <tr><td><b>Up for</b></td><td id="m-uptime">-</td></tr>
+  <tr><td><b>CPU Temp</b></td><td id="m-temp">-</td></tr>
+  <tr><td><b>Battery</b></td><td id="m-battery">-</td></tr>
+</table>
+
+<hr>
+
+<center>
+  <p><font size="2">
+    [ <a href="https://vasumenon.com">Back to vasumenon.com</a> ]
+    [ <a href="https://vasumenon.com/mcagent/">AI Agent</a> ]
+  </font></p>
+  <p><font size="2">
+    <b>&#9888; UNDER CONSTRUCTION &#9888;</b><br>
+    Best viewed with Netscape Navigator at 800x600<br>
+    <i>This page is hosted on a laptop. Please be gentle.</i>
+  </font></p>
+</center>
+
+<script id="initial" type="application/json">{{ s | tojson }}</script>
+<script>
+(function () {
+  var checkedAt = 0;
+
+  function pad(s, n) { s = String(s); while (s.length < n) s += " "; return s; }
+  function esc(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+
+  function render(data) {
+    checkedAt = data.checked_at;
+    var lines = ["C:\\FLATBOY> mcstatus", "", "SERVER          STATUS  PLAYERS  VERSION"];
+    data.servers.forEach(function (srv) {
+      lines.push(pad(srv.name, 16) + pad(srv.online ? "UP" : "DOWN", 8) +
+                 pad(srv.online ? srv.players + "/" + srv.max_players : "-", 9) +
+                 (srv.online ? (srv.version || "?") : "-"));
+    });
+    lines.push("", "C:\\FLATBOY> ");
+    document.getElementById("term").innerHTML = esc(lines.join("\n"));
+
+    var m = data.machine;
+    var days = Math.floor(m.uptime_s / 86400), hours = Math.floor(m.uptime_s % 86400 / 3600);
+    document.getElementById("m-uptime").textContent = days + " days, " + hours + " hours";
+    document.getElementById("m-mem").textContent =
+      (m.mem_used / 1073741824).toFixed(1) + " of " + (m.mem_total / 1073741824).toFixed(1) + " GB used";
+    document.getElementById("m-temp").textContent = m.cpu_temp_c == null ? "?" : m.cpu_temp_c + " C";
+    document.getElementById("m-battery").textContent =
+      m.battery_pct == null ? "?" : m.battery_pct + "%" + (m.on_ac ? " (plugged in)" : "");
+    tick();
+  }
+
+  function tick() {
+    var ago = Math.max(0, Math.round(Date.now() / 1000 - checkedAt));
+    document.getElementById("checked").textContent = ago < 5 ? "just now" : ago + " seconds ago";
+  }
+
+  function refresh() {
+    fetch("/api/status", { cache: "no-store" })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (d) { if (d) render(d); })
+      .catch(function () {});
+  }
+
+  document.getElementById("copy").addEventListener("click", function () {
+    var b = this;
+    navigator.clipboard.writeText(document.getElementById("addr").textContent)
+      .then(function () { b.textContent = "Copied!"; }, function () { b.textContent = "Select & copy"; });
+    setTimeout(function () { b.textContent = "Copy"; }, 1500);
+  });
+
+  var on = true;
+  if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    setInterval(function () { on = !on; document.getElementById("cur").style.visibility = on ? "visible" : "hidden"; }, 530);
+  }
+
+  render(JSON.parse(document.getElementById("initial").textContent));
+  setInterval(refresh, 30000);
+  setInterval(tick, 5000);
+})();
+</script>
+</body>
+</html>
