@@ -8,7 +8,9 @@ import time
 import urllib.error
 import urllib.request
 
-from flask import Flask, jsonify, render_template
+from urllib.parse import quote
+
+from flask import Flask, Response, jsonify, redirect, render_template, request
 
 app = Flask(__name__)
 
@@ -183,6 +185,55 @@ def index():
 def api_status():
     resp = jsonify(status())
     resp.headers["Cache-Control"] = f"public, max-age={CACHE_SECONDS}"
+    return resp
+
+
+# --- /map: BlueMap's web map, which the Rocket Lockett server serves on MAP_URL. The tunnel
+# can route a path but not strip it, and BlueMap expects to be at the root, so it's passed
+# through here with /map removed. Only GET and HEAD; nothing is cached or changed on the way.
+
+MAP_URL = os.environ.get("MAP_URL", "http://127.0.0.1:8100").rstrip("/")
+# Request headers BlueMap uses (compressed tiles, revalidation); everything else stays here.
+_MAP_REQUEST_HEADERS = ("Accept", "Accept-Encoding", "If-Modified-Since", "If-None-Match")
+_MAP_RESPONSE_HEADERS = ("Content-Type", "Content-Encoding", "Cache-Control", "ETag",
+                         "Last-Modified", "Expires")
+# BlueMap's web app renders with WebGL and decodes tiles in workers made from blobs.
+MAP_CSP = ("default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob:; "
+           "worker-src 'self' blob:; style-src 'self' 'unsafe-inline'; "
+           "img-src 'self' data: blob:; connect-src 'self'; font-src 'self' data:; "
+           "frame-ancestors 'none'; base-uri 'self'; form-action 'none'")
+
+
+@app.route("/map")
+def map_root():
+    # The web app loads its files relative to the page, so it must be /map/, not /map.
+    return redirect("/map/", code=301)
+
+
+@app.route("/map/", defaults={"path": ""}, methods=["GET", "HEAD"])
+@app.route("/map/<path:path>", methods=["GET", "HEAD"])
+def map_passthrough(path):
+    target = f"{MAP_URL}/{quote(path)}"
+    if request.query_string:
+        target += "?" + request.query_string.decode("latin-1")
+    headers = {h: request.headers[h] for h in _MAP_REQUEST_HEADERS if h in request.headers}
+    upstream = urllib.request.Request(target, headers=headers, method=request.method)
+    try:
+        r = urllib.request.urlopen(upstream, timeout=15)
+    except urllib.error.HTTPError as e:  # 304 Not Modified and 404s land here too
+        r = e
+    except OSError:
+        return Response("The map is not available right now.", status=502,
+                        mimetype="text/plain", headers={"Content-Security-Policy": MAP_CSP})
+    body = r.read() if request.method == "GET" else b""
+    resp = Response(body, status=r.status)
+    for h in _MAP_RESPONSE_HEADERS:
+        if r.headers.get(h):
+            resp.headers[h] = r.headers[h]
+    resp.headers["Content-Security-Policy"] = MAP_CSP
+    # Werkzeug would otherwise fill in its own Content-Length for HEAD; keep BlueMap's.
+    if request.method == "HEAD" and r.headers.get("Content-Length"):
+        resp.headers["Content-Length"] = r.headers["Content-Length"]
     return resp
 
 
