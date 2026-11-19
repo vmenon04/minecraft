@@ -26,7 +26,14 @@ ENV TYPE=PAPER \
     # top level), so a plugin dropped from this image doesn't linger. Plugin data folders stay.
     REMOVE_OLD_MODS=TRUE \
     REMOVE_OLD_MODS_INCLUDE=*.jar \
-    REMOVE_OLD_MODS_DEPTH=1
+    REMOVE_OLD_MODS_DEPTH=1 \
+    # The server keeps its own bukkit.yml, spigot.yml and Paper configs: never fill missing
+    # ones in from the image's default-config download.
+    SKIP_DOWNLOAD_DEFAULTS=true
+
+# Made first and readable by all: ADD --chmod would otherwise give the folder it creates the
+# jars' 644, and the server (not root) couldn't open it.
+RUN install -d -m 755 /plugins
 
 # BlueMap 5.29: the 3D web map (served on 8100, shown at mc.vasumenon.com/map).
 ADD --chmod=644 --checksum=sha256:7bf475936c26107d476c63151c76d5b49e865eebeada12c9e7d92155de877b9f \

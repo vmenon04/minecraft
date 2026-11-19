@@ -31,7 +31,7 @@ jobs:
       - name: It starts, with every plugin
         run: |
           docker run -d --name mc -p 8100:8100 -e EULA=TRUE -e ONLINE_MODE=FALSE \
-            -e MAX_MEMORY=2G -e LEVEL_TYPE=minecraft:flat "$IMAGE:test"
+            -e MAX_MEMORY=2G "$IMAGE:test"
           for i in $(seq 1 120); do
             docker logs mc 2>&1 | grep -q 'Done (' && break
             sleep 5
