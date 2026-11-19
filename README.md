@@ -7,7 +7,9 @@ My Minecraft servers and what goes with them. Each folder builds and releases on
 | --- | --- | --- |
 | [`aibot/`](aibot) | `/ai <question>`: a Paper plugin that answers players' questions in chat | `AIBot-X.Y.Z.jar` on GitHub Releases (`aibot-vX.Y.Z`) |
 | [`servers/rocket-lockett/`](servers/rocket-lockett) | The Rocket Lockett server: Paper and its plugins, pinned, as one image | `ghcr.io/vmenon04/rocket-lockett:X.Y.Z` (`rocket-lockett-vX.Y.Z`) |
-| [`mc-site/`](mc-site) | [mc.vasumenon.com](https://mc.vasumenon.com): server status, and the BlueMap web map at `/map` | `ghcr.io/vmenon04/mc-site:X.Y.Z` (`mc-site-vX.Y.Z`) |
+| [`mc-site/`](mc-site) | [mc.vasumenon.com](https://mc.vasumenon.com): the servers' status and flatboy's stats | `ghcr.io/vmenon04/mc-site:X.Y.Z` (`mc-site-vX.Y.Z`) |
+
+The web map at [mc.vasumenon.com/map](https://mc.vasumenon.com/map/) is BlueMap's own, served by the server image on port 8100; homelab's nginx in front of mc-site sends `/map/` there.
 
 ## A server image
 

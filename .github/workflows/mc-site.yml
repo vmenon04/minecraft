@@ -43,7 +43,6 @@ jobs:
           docker run -d --name site -p 8000:8000 "$IMAGE:test"
           for i in $(seq 1 20); do curl -sf -o /dev/null http://127.0.0.1:8000/api/status && break; sleep 1; done
           curl -sf http://127.0.0.1:8000/api/status
-          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8000/map/)" = 502  # no BlueMap here
 
   # Only a release tag gets to publish, and only after the tests and the image check passed.
   publish:
