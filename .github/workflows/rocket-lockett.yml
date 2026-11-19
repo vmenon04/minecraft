@@ -8,6 +8,8 @@ on:
     branches: [main]
     paths: [aibot/**, servers/rocket-lockett/**, .github/workflows/rocket-lockett.yml]
     tags: [rocket-lockett-v*]
+  # Also by hand (Actions tab), e.g. to check a build without a change.
+  workflow_dispatch:
   pull_request:
     paths: [aibot/**, servers/rocket-lockett/**, .github/workflows/rocket-lockett.yml]
 
