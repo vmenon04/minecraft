@@ -56,6 +56,8 @@ jobs:
       IMAGE: ghcr.io/${{ github.repository_owner }}/mc-site
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0 # the earlier tags, for the release notes
       - run: |
           version=${GITHUB_REF_NAME#mc-site-v}
           docker build -t "$IMAGE:$version" mc-site
@@ -67,4 +69,7 @@ jobs:
         run: |
           version=${GITHUB_REF_NAME#mc-site-v}
           printf 'Image: `%s`\n' "$IMAGE:$version" > notes.md
-          gh release create "$GITHUB_REF_NAME" --title "mc-site $version" --notes-file notes.md --generate-notes --latest=false
+          # Notes from this component's previous release, not whichever tag in the repo came last.
+          prev=$(git tag --list 'mc-site-v*' --sort=-v:refname | grep -vxF "$GITHUB_REF_NAME" | head -n 1)
+          gh release create "$GITHUB_REF_NAME" --title "mc-site $version" --notes-file notes.md \
+            --generate-notes ${prev:+--notes-start-tag "$prev"} --latest=false

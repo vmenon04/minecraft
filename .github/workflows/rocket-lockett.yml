@@ -63,6 +63,8 @@ jobs:
       IMAGE: ghcr.io/${{ github.repository_owner }}/rocket-lockett
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0 # the earlier tags, for the release notes
       - run: |
           version=${GITHUB_REF_NAME#rocket-lockett-v}
           docker build -f servers/rocket-lockett/Dockerfile -t "$IMAGE:$version" .
@@ -74,4 +76,7 @@ jobs:
         run: |
           version=${GITHUB_REF_NAME#rocket-lockett-v}
           printf 'Image: `%s`\n' "$IMAGE:$version" > notes.md
-          gh release create "$GITHUB_REF_NAME" --title "rocket-lockett $version" --notes-file notes.md --generate-notes --latest=false
+          # Notes from this component's previous release, not whichever tag in the repo came last.
+          prev=$(git tag --list 'rocket-lockett-v*' --sort=-v:refname | grep -vxF "$GITHUB_REF_NAME" | head -n 1)
+          gh release create "$GITHUB_REF_NAME" --title "rocket-lockett $version" --notes-file notes.md \
+            --generate-notes ${prev:+--notes-start-tag "$prev"} --latest=false
